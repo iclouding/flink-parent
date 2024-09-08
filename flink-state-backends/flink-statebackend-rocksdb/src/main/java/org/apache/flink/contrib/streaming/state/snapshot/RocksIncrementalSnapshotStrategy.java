@@ -217,6 +217,8 @@ public class RocksIncrementalSnapshotStrategy<K>
         // snapshot meta data to save
         for (Map.Entry<String, RocksDbKvStateInfo> stateMetaInfoEntry :
                 kvStateInformation.entrySet()) {
+            // dingguotao 注释: 2024/8/15 11:08
+            //          元数据快照
             stateMetaInfoSnapshots.add(stateMetaInfoEntry.getValue().metaInfo.snapshot());
         }
         return new PreviousSnapshot(confirmedSstFiles);

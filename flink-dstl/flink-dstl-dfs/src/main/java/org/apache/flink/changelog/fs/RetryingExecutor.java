@@ -84,6 +84,8 @@ class RetryingExecutor implements AutoCloseable {
      */
     <T> void execute(RetryPolicy retryPolicy, RetriableAction<T> action) {
         LOG.debug("execute with retryPolicy: {}", retryPolicy);
+        // dingguotao 注释: 2024/8/19 19:34
+        //          封装成可重试的task
         RetriableActionAttempt<T> task =
                 RetriableActionAttempt.initialize(
                         action,
@@ -220,6 +222,8 @@ class RetryingExecutor implements AutoCloseable {
             if (actionCompleted.get()) {
                 return;
             }
+            // dingguotao 注释: 2024/8/19 19:37
+            //          注册一个超时的timer,用来取消这个定时任务
             Optional<ScheduledFuture<?>> timeoutFuture = scheduleTimeout();
             try {
                 Result result = action.tryExecute();

@@ -96,6 +96,8 @@ public final class StreamingFunctionUtils {
 
         while (true) {
 
+            // dingguotao 注释: 2024/8/18 16:06
+            //          快照
             if (trySnapshotFunctionState(context, backend, userFunction)) {
                 break;
             }

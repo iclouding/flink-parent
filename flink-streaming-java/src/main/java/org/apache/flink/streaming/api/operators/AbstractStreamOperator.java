@@ -271,6 +271,8 @@ public abstract class AbstractStreamOperator<OUT>
         final CloseableRegistry streamTaskCloseableRegistry =
                 Preconditions.checkNotNull(containingTask.getCancelables());
 
+        // dingguotao 注释: 2024/9/7 18:05
+        //          创建context,准备恢复
         final StreamOperatorStateContext context =
                 streamTaskStateManager.streamOperatorStateContext(
                         getOperatorID(),
@@ -287,10 +289,14 @@ public abstract class AbstractStreamOperator<OUT>
                                 runtimeContext.getUserCodeClassLoader()),
                         isUsingCustomRawKeyedState());
 
+        // dingguotao 注释: 2024/9/7 18:03
+        //          封装 StreamOperatorStateHandler,后续和状态相关操作,都由StreamOperatorStateHandler类处理
         stateHandler =
                 new StreamOperatorStateHandler(
                         context, getExecutionConfig(), streamTaskCloseableRegistry);
         timeServiceManager = context.internalTimerServiceManager();
+        // dingguotao 注释: 2024/9/7 18:04
+        //          恢复算子状态
         stateHandler.initializeOperatorState(this);
         runtimeContext.setKeyedStateStore(stateHandler.getKeyedStateStore().orElse(null));
     }

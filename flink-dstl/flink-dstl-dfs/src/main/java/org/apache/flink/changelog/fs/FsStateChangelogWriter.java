@@ -233,7 +233,11 @@ class FsStateChangelogWriter implements StateChangelogWriter<ChangelogStateHandl
             SequenceNumber from, long checkpointId) throws IOException {
         ensureCanPersist(from);
         rollover();
+        // dingguotao 注释: 2024/8/19 17:37
+        //          待上传的Changelog
         Map<SequenceNumber, StateChangeSet> toUpload = drainTailMap(notUploaded, from);
+        // dingguotao 注释: 2024/8/19 17:37
+        //          从from开始,已经上传的Changelog,这个会包含在本次Checkpoint中,readyToReturn是已经上传的Changelog
         NavigableMap<SequenceNumber, UploadResult> readyToReturn = uploaded.tailMap(from, true);
         LOG.debug(
                 "collected readyToReturn: {}, toUpload: {}, checkpointId: {}.",
@@ -249,14 +253,20 @@ class FsStateChangelogWriter implements StateChangelogWriter<ChangelogStateHandl
             }
         }
 
+        // dingguotao 注释: 2024/8/19 17:43
+        //          生成从from到最新的range,判断是否所有的Changelog已经上传
         SequenceNumberRange range = SequenceNumberRange.generic(from, activeSequenceNumber);
         if (range.size() == readyToReturn.size()) {
+            // dingguotao 注释: 2024/8/19 17:35
+            //          说明没有要上传的数据
             checkState(toUpload.isEmpty());
             return CompletableFuture.completedFuture(
                     buildSnapshotResult(keyGroupRange, readyToReturn, 0L));
         } else {
             CompletableFuture<SnapshotResult<ChangelogStateHandleStreamImpl>> future =
                     new CompletableFuture<>();
+            // dingguotao 注释: 2024/8/19 17:58
+            //          上传回调.会在 UploadTask 成功或者失败时回调
             uploadCompletionListeners.add(
                     new UploadCompletionListener(keyGroupRange, range, readyToReturn, future));
             if (!toUpload.isEmpty()) {
@@ -477,10 +487,18 @@ class FsStateChangelogWriter implements StateChangelogWriter<ChangelogStateHandl
     }
 
     private final class UploadCompletionListener {
+        // dingguotao 注释: 2024/8/19 18:00
+        //          uploaded 已经上传的部分
         private final NavigableMap<SequenceNumber, UploadResult> uploaded;
+        // dingguotao 注释: 2024/8/19 18:00
+        //          代表已经完成的completionFuture
         private final CompletableFuture<SnapshotResult<ChangelogStateHandleStreamImpl>>
                 completionFuture;
+        // dingguotao 注释: 2024/8/19 18:01
+        //          Changelog所对应的keyGroupRange
         private final KeyGroupRange keyGroupRange;
+        // dingguotao 注释: 2024/8/19 18:01
+        //          changeRange 所有需要上传的Changelog返回,这里包含uploaded
         private final SequenceNumberRange changeRange;
 
         private UploadCompletionListener(
@@ -501,6 +519,8 @@ class FsStateChangelogWriter implements StateChangelogWriter<ChangelogStateHandl
             long incrementalSize = 0L;
             for (UploadResult uploadResult : uploadResults) {
                 if (changeRange.contains(uploadResult.sequenceNumber)) {
+                    // dingguotao 注释: 2024/8/19 19:15
+                    //          sequenceNumber 在 from 和 to 之间
                     uploaded.put(uploadResult.sequenceNumber, uploadResult);
                     incrementalSize += uploadResult.getSize();
                     if (uploaded.size() == changeRange.size()) {
@@ -530,6 +550,8 @@ class FsStateChangelogWriter implements StateChangelogWriter<ChangelogStateHandl
 
     private static Map<SequenceNumber, StateChangeSet> drainTailMap(
             NavigableMap<SequenceNumber, StateChangeSet> src, SequenceNumber fromInclusive) {
+        // dingguotao 注释: 2024/9/2 11:29
+        //          tailMap, 返回从 fromInclusive 到最后的所有key组成的map
         Map<SequenceNumber, StateChangeSet> tailMap = src.tailMap(fromInclusive, true);
         Map<SequenceNumber, StateChangeSet> toUpload = new HashMap<>(tailMap);
         tailMap.clear();

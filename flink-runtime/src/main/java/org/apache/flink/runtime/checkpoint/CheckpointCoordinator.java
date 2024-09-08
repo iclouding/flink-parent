@@ -1240,6 +1240,8 @@ public class CheckpointCoordinator {
                 // 2. removed eventually upon checkpoint subsumption (or job cancellation)
                 // Do not register savepoints' shared state, as Flink is not in charge of
                 // savepoints' lifecycle
+                // dingguotao 注释: 2024/9/5 11:57
+                //          注册 shared state registry
                 if (checkpoint == null || !checkpoint.getProps().isSavepoint()) {
                     message.getSubtaskState()
                             .registerSharedStates(

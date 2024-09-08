@@ -59,6 +59,8 @@ public class StateUtil {
      */
     public static void bestEffortDiscardAllStateObjects(
             Iterable<? extends StateObject> handlesToDiscard) throws Exception {
+        // dingguotao 注释: 2024/9/5 11:32
+        //          changelog state backend的 handel 类型 ChangelogStateBackendHandleImpl
         LambdaUtil.applyToAllWhileSuppressingExceptions(
                 handlesToDiscard, StateObject::discardState);
     }

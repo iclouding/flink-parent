@@ -184,6 +184,8 @@ public class PeriodicMaterializationManager implements Closeable {
 
         this.periodicExecutor = periodicExecutor;
 
+        // dingguotao 注释: 2024/8/14 20:09
+        //        随机开始物化
         this.initialDelay =
                 // randomize initial delay to avoid thundering herd problem
                 MathUtils.murmurHash(operatorSubtaskId.hashCode()) % periodicMaterializeDelay;
@@ -222,6 +224,8 @@ public class PeriodicMaterializationManager implements Closeable {
                     metrics.reportStartedMaterialization();
                     Optional<MaterializationRunnable> materializationRunnableOptional;
                     try {
+                        // dingguotao 注释: 2024/8/15 10:52
+                        //          开始做 materialization, 同步阶段也在这里,返回异步阶段
                         materializationRunnableOptional = target.initMaterialization();
                     } catch (Exception ex) {
                         metrics.reportFailedMaterialization();
@@ -230,6 +234,8 @@ public class PeriodicMaterializationManager implements Closeable {
 
                     if (materializationRunnableOptional.isPresent()) {
                         MaterializationRunnable runnable = materializationRunnableOptional.get();
+                        // dingguotao 注释: 2024/9/3 20:06
+                        //          执行异步阶段
                         asyncOperationsThreadPool.execute(
                                 () ->
                                         asyncMaterializationPhase(
@@ -331,6 +337,8 @@ public class PeriodicMaterializationManager implements Closeable {
         FileSystemSafetyNet.initializeSafetyNetForThread();
         CompletableFuture<SnapshotResult<KeyedStateHandle>> result = new CompletableFuture<>();
         try {
+            // dingguotao 注释: 2024/9/3 20:07
+            //          执行异步阶段,上传文件
             FutureUtils.runIfNotDoneAndGet(materializedRunnableFuture);
 
             LOG.debug("Task {} finishes asynchronous part of materialization.", subtaskName);

@@ -242,6 +242,8 @@ public abstract class AbstractKeyedStateBackend<K>
     }
 
     /** @see KeyedStateBackend */
+    // dingguotao 注释: 2024/9/7 17:15
+    //          修改keyContext中的key和对应keygroup的index
     @Override
     public void setCurrentKey(K newKey) {
         notifyKeySelected(newKey);

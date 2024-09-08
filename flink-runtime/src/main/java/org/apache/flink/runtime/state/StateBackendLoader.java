@@ -156,6 +156,8 @@ public class StateBackendLoader {
                 return hashMapStateBackend;
 
             case ROCKSDB_STATE_BACKEND_NAME:
+                // dingguotao 注释: 2024/8/12 10:47
+                //          rocksdb backend, factory = org.apache.flink.contrib.streaming.state.EmbeddedRocksDBStateBackendFactory
                 factoryClassName = ROCKSDB_STATE_BACKEND_FACTORY;
 
                 // fall through to the 'default' case that uses reflection to load the backend
@@ -305,6 +307,8 @@ public class StateBackendLoader {
 
         StateBackend backend;
         if (enableChangeLog) {
+            // dingguotao 注释: 2024/8/12 10:53
+            //          开启Changelog State Backend,代理了之前的Backend
             backend = wrapStateBackend(rootBackend, classLoader, CHANGELOG_STATE_BACKEND);
             LOG.info(
                     "State backend loader loads {} to delegate {}",
@@ -370,6 +374,8 @@ public class StateBackendLoader {
             throws DynamicCodeLoadingException {
         // Wrapping ChangelogStateBackend or ChangelogStateBackendHandle is not supported currently.
         if (!isChangelogStateBackend(originalStateBackend)
+                // dingguotao 注释: 2024/8/12 11:17
+                //          用以Changelog 开 --> 关的状态恢复,包装下,可以具备changelog的状态恢复能力
                 && keyedStateHandles.stream()
                         .anyMatch(
                                 stateHandle ->
@@ -387,6 +393,8 @@ public class StateBackendLoader {
     private static StateBackend wrapStateBackend(
             StateBackend backend, ClassLoader classLoader, String className)
             throws DynamicCodeLoadingException {
+        // dingguotao 注释: 2024/8/12 10:55
+        //          className = org.apache.flink.state.changelog.ChangelogStateBackend
 
         // ChangelogStateBackend resides in a separate module, load it using reflection
         try {

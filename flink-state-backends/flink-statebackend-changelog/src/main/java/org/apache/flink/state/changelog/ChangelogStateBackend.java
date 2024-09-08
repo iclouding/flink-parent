@@ -52,6 +52,8 @@ public class ChangelogStateBackend extends AbstractChangelogStateBackend
 
     private static final long serialVersionUID = 1000L;
 
+    // dingguotao 注释: 2024/8/12 10:55
+    //          org.apache.flink.runtime.state.StateBackendLoader.wrapStateBackend 反射调用,因为和调用地方不在一个 module
     ChangelogStateBackend(StateBackend stateBackend) {
         super(stateBackend);
     }
@@ -71,7 +73,7 @@ public class ChangelogStateBackend extends AbstractChangelogStateBackend
 
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
-    protected <K> CheckpointableKeyedStateBackend<K> restore(
+    protected <K> CheckpointableKeyedStateBackend<K>  restore(
             Environment env,
             String operatorIdentifier,
             KeyGroupRange keyGroupRange,
@@ -115,6 +117,8 @@ public class ChangelogStateBackend extends AbstractChangelogStateBackend
 
         ChangelogKeyedStateBackend<K> changelogKeyedStateBackend =
                 (ChangelogKeyedStateBackend<K>) keyedStateBackend;
+        // dingguotao 注释: 2024/8/14 20:08
+        //          周期性物化
         PeriodicMaterializationManager periodicMaterializationManager =
                 new PeriodicMaterializationManager(
                         checkNotNull(env.getMainMailboxExecutor()),
@@ -135,6 +139,8 @@ public class ChangelogStateBackend extends AbstractChangelogStateBackend
         // because of cyclic reference
         changelogKeyedStateBackend.registerCloseable(periodicMaterializationManager);
 
+        // dingguotao 注释: 2024/8/14 20:09
+        //          启动物化
         periodicMaterializationManager.start();
 
         return keyedStateBackend;

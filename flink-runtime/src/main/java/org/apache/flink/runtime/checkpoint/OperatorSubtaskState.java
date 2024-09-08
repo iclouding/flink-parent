@@ -224,6 +224,8 @@ public class OperatorSubtaskState implements CompositeStateHandle {
 
     @Override
     public void registerSharedStates(SharedStateRegistry sharedStateRegistry, long checkpointID) {
+        // dingguotao 注释: 2024/9/5 11:58
+        //          注册 keyed state
         registerSharedState(sharedStateRegistry, managedKeyedState, checkpointID);
         registerSharedState(sharedStateRegistry, rawKeyedState, checkpointID);
         registerFileMergingDirectoryHandle(
@@ -239,13 +241,15 @@ public class OperatorSubtaskState implements CompositeStateHandle {
             SharedStateRegistry sharedStateRegistry,
             Iterable<KeyedStateHandle> stateHandles,
             long checkpointID) {
+        // dingguotao 注释: 2024/9/5 14:11
+        //
         for (KeyedStateHandle stateHandle : stateHandles) {
             if (stateHandle != null) {
                 // Registering state handle to the given sharedStateRegistry serves one purpose:
                 // update the status of the checkpoint in sharedStateRegistry to which the state
                 // handle belongs.
                 sharedStateRegistry.registerReference(
-                        new SharedStateRegistryKey(stateHandle.getStateHandleId().getKeyString()),
+                          new SharedStateRegistryKey(stateHandle.getStateHandleId().getKeyString()),
                         new EmptyDiscardStateObjectForRegister(stateHandle.getStateHandleId()),
                         checkpointID);
                 stateHandle.registerSharedStates(sharedStateRegistry, checkpointID);

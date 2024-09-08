@@ -59,21 +59,29 @@ public abstract class StateTable<K, N, S>
      * The key context view on the backend. This provides information, such as the currently active
      * key.
      */
+    // dingguotao 注释: 2024/9/7 15:55
+    //          当前的key
     protected final InternalKeyContext<K> keyContext;
 
     /** Combined meta information such as name and serializers for this state. */
+    // dingguotao 注释: 2024/9/7 15:57
+    //          state的metadata信息
     protected RegisteredKeyValueStateBackendMetaInfo<N, S> metaInfo;
 
     /** The serializer of the key. */
     protected final TypeSerializer<K> keySerializer;
 
     /** The current key group range. */
+    // dingguotao 注释: 2024/9/7 15:59
+    //          当前绑定的keygroup
     protected final KeyGroupRange keyGroupRange;
 
     /**
      * Map for holding the actual state objects. The outer array represents the key-groups. All
      * array positions will be initialized with an empty state map.
      */
+    // dingguotao 注释: 2024/9/7 16:20
+    //          每个key,对应的一个stateMap
     protected final StateMap<K, N, S>[] keyGroupedStateMaps;
 
     /**
@@ -91,6 +99,9 @@ public abstract class StateTable<K, N, S>
 
         this.keyGroupRange = keyContext.getKeyGroupRange();
 
+        // dingguotao 注释: 2024/9/7 16:20
+        //          为每个keygroup的分组对象, 这里可能会有多个key,对应一个keygroup的序号
+        //          初始化一个stateMap,具体就是 CopyOnWriteStateMap
         @SuppressWarnings("unchecked")
         StateMap<K, N, S>[] state =
                 (StateMap<K, N, S>[])

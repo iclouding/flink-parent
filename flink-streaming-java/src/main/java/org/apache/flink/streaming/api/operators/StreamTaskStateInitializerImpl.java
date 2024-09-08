@@ -170,6 +170,8 @@ public class StreamTaskStateInitializerImpl implements StreamTaskStateInitialize
                         taskInfo.getNumberOfParallelSubtasks());
 
         final String operatorIdentifierText = operatorSubtaskDescription.toString();
+        // dingguotao 注释: 2024/9/7 18:01
+        //          从taskStateManager中获取本operator的状态元信息.
         final PrioritizedOperatorSubtaskState prioritizedOperatorSubtaskStates =
                 taskStateManager.prioritizedOperatorState(operatorID);
 
@@ -199,6 +201,8 @@ public class StreamTaskStateInitializerImpl implements StreamTaskStateInitialize
                                 statsCollector,
                                 StateBackend::createAsyncKeyedStateBackend);
             } else {
+                // dingguotao 注释: 2024/9/7 18:45
+                //          创建 keyed state backend
                 keyedStatedBackend =
                         keyedStatedBackend(
                                 keySerializer,
@@ -412,6 +416,8 @@ public class StreamTaskStateInitializerImpl implements StreamTaskStateInitialize
 
         TaskInfo taskInfo = environment.getTaskInfo();
 
+        // dingguotao 注释: 2024/8/12 11:10
+        //          计算该keystate负责的keyGroup
         final KeyGroupRange keyGroupRange =
                 KeyGroupRangeAssignment.computeKeyGroupRangeForOperatorIndex(
                         taskInfo.getMaxNumberOfParallelSubtasks(),
@@ -425,6 +431,8 @@ public class StreamTaskStateInitializerImpl implements StreamTaskStateInitialize
         // input stream opened for serDe during restore.
         CloseableRegistry cancelStreamRegistryForRestore = new CloseableRegistry();
         backendCloseableRegistry.registerCloseable(cancelStreamRegistryForRestore);
+        // dingguotao 注释: 2024/9/7 18:46
+        //          backendRestorer 用来恢复状态,是个Function,将传入的stateHandle,加载状态
         BackendRestorerProcedure<R, KeyedStateHandle> backendRestorer =
                 new BackendRestorerProcedure<>(
                         (stateHandles) -> {
@@ -443,6 +451,9 @@ public class StreamTaskStateInitializerImpl implements StreamTaskStateInitialize
                                             stateHandles,
                                             cancelStreamRegistryForRestore,
                                             managedMemoryFraction);
+                            // dingguotao 注释: 2024/8/12 11:38
+                            //          恢复状态关键,
+                            //          keyedStateBackendCreator = StateBackend::createKeyedStateBackend
                             return keyedStateBackendCreator.create(
                                     loadStateBackendFromKeyedStateHandles(
                                             stateBackend,

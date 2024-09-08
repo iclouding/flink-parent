@@ -235,6 +235,8 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
         @Override
         public void emitRecord(StreamRecord<IN> record) throws Exception {
             numRecordsIn.inc();
+            // dingguotao 注释: 2024/9/7 17:21
+            //          recordProcessor 会进一步处理数据
             recordProcessor.accept(record);
         }
 

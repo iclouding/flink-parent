@@ -602,6 +602,10 @@ public class RocksDBKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
         // flush everything into db before taking a snapshot
         writeBatchWrapper.flush();
 
+        // dingguotao 注释: 2024/8/24 10:02
+        //          使用SnapshotStrategyRunner来做快照.
+        //          checkpointSnapshotStrategy Checkpoint快照策略,生成同步资源,返回异步逻辑
+        //          cancelStreamRegistry 被取消时的io回调
         return new SnapshotStrategyRunner<>(
                         checkpointSnapshotStrategy.getDescription(),
                         checkpointSnapshotStrategy,

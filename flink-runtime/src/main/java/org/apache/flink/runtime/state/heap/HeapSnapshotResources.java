@@ -75,6 +75,8 @@ final class HeapSnapshotResources<K> implements FullSnapshotResources<K> {
             TypeSerializer<K> keySerializer,
             int totalKeyGroups) {
 
+        // dingguotao 注释: 2024/8/24 10:24
+        //          如果没有注册状态,或者没有注册定时器,就不用输出
         if (registeredKVStates.isEmpty() && registeredPQStates.isEmpty()) {
             return new HeapSnapshotResources<>(
                     Collections.emptyList(),
@@ -96,12 +98,16 @@ final class HeapSnapshotResources<K> implements FullSnapshotResources<K> {
                         + Short.MAX_VALUE
                         + " states are supported");
 
+        // dingguotao 注释: 2024/8/24 10:24
+        //          metadata元数据
         final List<StateMetaInfoSnapshot> metaInfoSnapshots = new ArrayList<>(numStates);
         final Map<StateUID, Integer> stateNamesToId =
                 CollectionUtil.newHashMapWithExpectedSize(numStates);
         final Map<StateUID, StateSnapshot> cowStateStableSnapshots =
                 CollectionUtil.newHashMapWithExpectedSize(numStates);
 
+        // dingguotao 注释: 2024/8/24 10:25
+        //          生成kv state的快照
         processSnapshotMetaInfoForAllStates(
                 metaInfoSnapshots,
                 cowStateStableSnapshots,
@@ -109,6 +115,8 @@ final class HeapSnapshotResources<K> implements FullSnapshotResources<K> {
                 registeredKVStates,
                 StateMetaInfoSnapshot.BackendStateType.KEY_VALUE);
 
+        // dingguotao 注释: 2024/8/24 10:26
+        //          生成timer定时器的快照
         processSnapshotMetaInfoForAllStates(
                 metaInfoSnapshots,
                 cowStateStableSnapshots,
@@ -135,6 +143,10 @@ final class HeapSnapshotResources<K> implements FullSnapshotResources<K> {
 
         for (Map.Entry<String, ? extends StateSnapshotRestore> kvState :
                 registeredStates.entrySet()) {
+            /*********************
+             * dingguotao 注释: 2024/8/24 10:27
+             *  	    遍历所有的状态,生成metadata和kv快照
+             *********************/
             final StateUID stateUid = StateUID.of(kvState.getKey(), stateType);
             stateNamesToId.put(stateUid, stateNamesToId.size());
             StateSnapshotRestore state = kvState.getValue();

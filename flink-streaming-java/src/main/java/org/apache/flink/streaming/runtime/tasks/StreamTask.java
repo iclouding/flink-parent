@@ -808,6 +808,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
 
             // we need to make sure that any triggers scheduled in open() cannot be
             // executed before all operators are opened
+            // dingguotao 注释: 2024/9/7 17:41
+            //          恢复state和in flights的数据
             CompletableFuture<Void> allGatesRecoveredFuture =
                     actionExecutor.call(() -> restoreStateAndGates(initializationMetrics));
 
@@ -848,6 +850,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
 
         SequentialChannelStateReader reader =
                 getEnvironment().getTaskStateManager().getSequentialChannelStateReader();
+        // dingguotao 注释: 2024/9/7 17:42
+        //          1. 先恢复result partition的数据
         reader.readOutputData(
                 getEnvironment().getAllWriters(), !configuration.isGraphContainingLoops());
 
@@ -855,6 +859,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
         initializationMetrics.addDurationMetric(
                 READ_OUTPUT_DATA_DURATION, readOutputDataTs - mailboxStartTs);
 
+        // dingguotao 注释: 2024/9/7 17:43
+        //          2. 恢复operator 状态的数据
         operatorChain.initializeStateAndOpenOperators(
                 createStreamTaskStateInitializer(initializationMetrics));
 
@@ -863,6 +869,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
                 INITIALIZE_STATE_DURATION, initializeStateEndTs - readOutputDataTs);
         IndexedInputGate[] inputGates = getEnvironment().getAllInputGates();
 
+        // dingguotao 注释: 2024/9/7 17:43
+        //          3. 恢复inputGate的数据,这样任务run起来,就立即处理数据了
         channelIOExecutor.execute(
                 () -> {
                     try {
@@ -877,6 +885,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
         // start checkpointing. If we implement incremental checkpointing of input channel state
         // we must make sure it supports CheckpointType#FULL_CHECKPOINT
         List<CompletableFuture<?>> recoveredFutures = new ArrayList<>(inputGates.length);
+        // dingguotao 注释: 2024/9/7 17:47
+        //          4. 为每个inputChannel 创建和上游的数据连接
         for (InputGate inputGate : inputGates) {
             recoveredFutures.add(inputGate.getStateConsumedFuture());
 
@@ -904,6 +914,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
         // Allow invoking method 'invoke' without having to call 'restore' before it.
         if (!isRunning) {
             LOG.debug("Restoring during invoke will be called.");
+            // dingguotao 注释: 2024/9/7 17:40
+            //          开始恢复数据. 首次启动时,isRunning=false,会在恢复完数据后修改为isRunning=true
             restoreInternal();
         }
 

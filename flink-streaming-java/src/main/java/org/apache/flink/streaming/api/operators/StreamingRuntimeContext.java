@@ -206,6 +206,8 @@ public class StreamingRuntimeContext extends AbstractRuntimeUDFContext {
     //  key/value state
     // ------------------------------------------------------------------------
 
+    // dingguotao 注释: 2024/8/16 10:51
+    //          获取 valueState
     @Override
     public <T> ValueState<T> getState(ValueStateDescriptor<T> stateProperties) {
         KeyedStateStore keyedStateStore = checkPreconditionsAndGetKeyedStateStore(stateProperties);

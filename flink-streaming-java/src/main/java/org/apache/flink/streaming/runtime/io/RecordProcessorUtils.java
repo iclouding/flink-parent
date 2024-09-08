@@ -60,6 +60,8 @@ public class RecordProcessorUtils {
             return ((AsyncStateProcessing) input).getRecordProcessor(1);
         } else {
             return record -> {
+                // dingguotao 注释: 2024/9/7 17:20
+                //          更新接收数据对应的keycontext,这样后续state操作时,不用关注对应的key
                 input.setKeyContextElement(record);
                 input.processElement(record);
             };

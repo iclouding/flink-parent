@@ -807,6 +807,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 throw new TaskSubmissionException(e);
             }
 
+            // dingguotao 注释: 2024/9/7 23:27
+            //          此处是提交过来需要恢复状态的元信息
             final JobManagerTaskRestore taskRestore = tdd.getTaskRestore();
 
             final TaskStateManager taskStateManager =

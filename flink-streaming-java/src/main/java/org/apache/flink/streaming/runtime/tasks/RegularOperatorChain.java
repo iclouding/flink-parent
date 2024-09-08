@@ -101,6 +101,8 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
     @Override
     public void initializeStateAndOpenOperators(
             StreamTaskStateInitializer streamTaskStateInitializer) throws Exception {
+        // dingguotao 注释: 2024/9/7 17:48
+        //          遍历所有状态,为每个状态都恢复数据
         for (StreamOperatorWrapper<?, ?> operatorWrapper : getAllOperators(true)) {
             StreamOperator<?> operator = operatorWrapper.getStreamOperator();
             operator.initializeState(streamTaskStateInitializer);
@@ -198,6 +200,8 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
                                 storage));
             }
         }
+        // dingguotao 注释: 2024/8/18 15:39
+        //          给operator coordinator发送Checkpoint ack信息
         sendAcknowledgeCheckpointEvent(checkpointMetaData.getCheckpointId());
     }
 
@@ -209,9 +213,13 @@ public class RegularOperatorChain<OUT, OP extends StreamOperator<OUT>>
             ChannelStateWriter.ChannelStateWriteResult channelStateWriteResult,
             CheckpointStreamFactory storage)
             throws Exception {
+        // dingguotao 注释: 2024/8/18 15:41
+        //          OperatorSnapshotFutures 封装了所有的state的快照操作,以及异步的返回值
         OperatorSnapshotFutures snapshotInProgress =
                 checkpointStreamOperator(
                         op, checkpointMetaData, checkpointOptions, storage, isRunning);
+        // dingguotao 注释: 2024/8/18 15:50
+        //          将channel state结果,放在snapshotInProgress中
         snapshotChannelStates(op, channelStateWriteResult, snapshotInProgress);
 
         return snapshotInProgress;

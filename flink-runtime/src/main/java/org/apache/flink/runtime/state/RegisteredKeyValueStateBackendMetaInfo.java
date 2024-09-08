@@ -43,8 +43,14 @@ import java.util.Objects;
  */
 public class RegisteredKeyValueStateBackendMetaInfo<N, S> extends RegisteredStateMetaInfoBase {
 
+    // dingguotao 注释: 2024/9/7 15:58
+    //          state的类型
     @Nonnull private final StateDescriptor.Type stateType;
+    // dingguotao 注释: 2024/9/7 15:58
+    //          namespace的序列化
     @Nonnull private final StateSerializerProvider<N> namespaceSerializerProvider;
+    // dingguotao 注释: 2024/9/7 15:58
+    //          state状态的序列化器
     @Nonnull private final StateSerializerProvider<S> stateSerializerProvider;
     @Nonnull private StateSnapshotTransformFactory<S> stateSnapshotTransformFactory;
 

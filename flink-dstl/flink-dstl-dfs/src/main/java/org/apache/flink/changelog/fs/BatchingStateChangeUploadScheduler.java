@@ -205,12 +205,20 @@ class BatchingStateChangeUploadScheduler implements StateChangeUploadScheduler {
     private void scheduleUploadIfNeeded() {
         checkState(holdsLock(lock));
         if (scheduleDelayMs == 0 || scheduledBytesCounter >= sizeThresholdBytes) {
+            // dingguotao 注释: 2024/8/19 19:25
+            //          scheduleDelayMs 没有延迟, state.changelog.dstl.dfs.batch.persist-delay = 10ms
+            //          或者 当前上传的阈值到了sizeThresholdBytes大小(state.changelog.dstl.dfs.batch.persist-size-threshold = 10MB);
+            //          如果满足至两个条件之一,则直接开始上传
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(false);
                 scheduledFuture = null;
             }
+            // dingguotao 注释: 2024/8/19 19:28
+            //          开始上传和保存
             drainAndSave();
         } else if (scheduledFuture == null) {
+            // dingguotao 注释: 2024/8/19 19:28
+            //          否则,设置延迟调度任务,是时间上的延迟
             scheduledFuture = scheduler.schedule(this::drainAndSave, scheduleDelayMs, MILLISECONDS);
         }
     }
@@ -235,6 +243,8 @@ class BatchingStateChangeUploadScheduler implements StateChangeUploadScheduler {
                 return;
             }
             uploadBatchSizes.update(tasks.size());
+            // dingguotao 注释: 2024/8/19 19:30
+            //          执行上传作业
             retryingExecutor.execute(retryPolicy, asRetriableAction(tasks));
         } catch (Throwable t) {
             tasks.forEach(task -> task.fail(t));

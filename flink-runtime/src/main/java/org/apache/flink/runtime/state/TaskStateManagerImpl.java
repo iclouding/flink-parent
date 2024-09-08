@@ -74,6 +74,8 @@ public class TaskStateManagerImpl implements TaskStateManager {
      * The data given by the job manager to restore the job. This is null for a new job without
      * previous state.
      */
+    // dingguotao 注释: 2024/9/7 23:25
+    //          存储了JobManager分配过来的状态
     @Nullable private final JobManagerTaskRestore jobManagerTaskRestore;
 
     /** The local state store to which this manager reports local state snapshots. */

@@ -195,12 +195,18 @@ public class StreamOperatorStateHandler {
                         ? keyedStateBackend.getKeyGroupRange()
                         : KeyGroupRange.EMPTY_KEY_GROUP_RANGE;
 
+        // dingguotao 注释: 2024/8/18 15:56
+        //          生成 默认空的 OperatorSnapshotFutures
         OperatorSnapshotFutures snapshotInProgress = new OperatorSnapshotFutures();
 
+        // dingguotao 注释: 2024/8/18 15:57
+        //          快照 context
         StateSnapshotContextSynchronousImpl snapshotContext =
                 new StateSnapshotContextSynchronousImpl(
                         checkpointId, timestamp, factory, keyGroupRange, closeableRegistry);
 
+        // dingguotao 注释: 2024/8/18 15:57
+        //          do snapshotState
         snapshotState(
                 streamOperator,
                 timeServiceManager,
@@ -230,6 +236,8 @@ public class StreamOperatorStateHandler {
             boolean isUsingCustomRawKeyedState)
             throws CheckpointException {
         try {
+            // dingguotao 注释: 2024/8/18 15:57
+            //          快照 timeservice
             if (timeServiceManager.isPresent()) {
                 checkState(
                         keyedStateBackend != null,
@@ -250,18 +258,24 @@ public class StreamOperatorStateHandler {
                             snapshotContext.getRawKeyedOperatorStateOutput(), operatorName);
                 }
             }
+            // dingguotao 注释: 2024/8/18 15:58
+            //          让operator写状态进去,也就是写进backend里,要求backend做快照了
             streamOperator.snapshotState(snapshotContext);
 
             snapshotInProgress.setKeyedStateRawFuture(snapshotContext.getKeyedStateStreamFuture());
             snapshotInProgress.setOperatorStateRawFuture(
                     snapshotContext.getOperatorStateStreamFuture());
 
+            // dingguotao 注释: 2024/8/18 21:35
+            //          operator state
             if (null != operatorStateBackend) {
                 snapshotInProgress.setOperatorStateManagedFuture(
                         operatorStateBackend.snapshot(
                                 checkpointId, timestamp, factory, checkpointOptions));
             }
 
+            // dingguotao 注释: 2024/8/18 21:35
+            //          keyed state
             if (null != keyedStateBackend) {
                 if (isCanonicalSavepoint(checkpointOptions.getCheckpointType())) {
                     SnapshotStrategyRunner<KeyedStateHandle, ? extends FullSnapshotResources<?>>
@@ -273,6 +287,8 @@ public class StreamOperatorStateHandler {
                                     checkpointId, timestamp, factory, checkpointOptions));
 
                 } else {
+                    // dingguotao 注释: 2024/8/18 22:01
+                    //          key state 快照
                     snapshotInProgress.setKeyedStateManagedFuture(
                             keyedStateBackend.snapshot(
                                     checkpointId, timestamp, factory, checkpointOptions));

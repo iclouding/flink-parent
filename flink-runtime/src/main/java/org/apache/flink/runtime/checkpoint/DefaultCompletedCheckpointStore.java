@@ -142,6 +142,8 @@ public class DefaultCompletedCheckpointStore<R extends ResourceVersion<R>>
                 CheckpointSubsumeHelper.subsume(
                         completedCheckpoints,
                         maxNumberOfCheckpointsToRetain,
+                        // dingguotao 注释: 2024/9/13 11:04
+                        //          清理Checkpoint逻辑
                         completedCheckpoint -> {
                             tryRemove(completedCheckpoint.getCheckpointID());
                             checkpointsCleaner.addSubsumedCheckpoint(completedCheckpoint);
@@ -152,7 +154,7 @@ public class DefaultCompletedCheckpointStore<R extends ResourceVersion<R>>
                         id ->
                                 checkpointsCleaner.cleanSubsumedCheckpoints(
                                         id,
-                                        getSharedStateRegistry().unregisterUnusedState(id),
+                                        getSharedStateRegistry().unregisterUnusedState(id), // dingguotao 更新shared registry
                                         postCleanup,
                                         ioExecutor));
         return subsume.orElse(null);

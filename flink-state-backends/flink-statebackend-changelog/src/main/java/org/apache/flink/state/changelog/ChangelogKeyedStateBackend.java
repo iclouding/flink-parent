@@ -148,6 +148,8 @@ public class ChangelogKeyedStateBackend<K>
 
     private final CheckpointStreamFactory streamFactory;
 
+    // dingguotao 注释: 2024/9/4 11:02
+    //          Rocksdb state 快照
     private ChangelogSnapshotState changelogSnapshotState;
 
     private long lastCheckpointId = -1L;
@@ -247,6 +249,8 @@ public class ChangelogKeyedStateBackend<K>
         this.metrics = metricGroup;
         this.changelogStateFactory = changelogStateFactory;
         this.stateChangelogWriter = stateChangelogWriter;
+        // dingguotao 注释: 2024/8/14 11:37
+        //          初始化SequenceNumber为0
         this.lastUploadedTo = stateChangelogWriter.initialSequenceNumber();
         this.closer.register(() -> stateChangelogWriter.truncateAndClose(lastUploadedTo));
         this.changelogSnapshotState = completeRestore(initialState);
@@ -274,6 +278,8 @@ public class ChangelogKeyedStateBackend<K>
                     }
                 };
         this.closer.register(keyedStateBackend);
+        // dingguotao 注释: 2024/8/14 11:05
+        //          用来删除积极上传但是没有包含在任何一个Checkpoint的changelog
         this.changelogTruncateHelper = new ChangelogTruncateHelper(stateChangelogWriter);
     }
 
@@ -392,6 +398,8 @@ public class ChangelogKeyedStateBackend<K>
             @Nonnull CheckpointOptions checkpointOptions)
             throws Exception {
 
+        // dingguotao 注释: 2024/8/18 22:02
+        //          savepoint
         if (checkpointOptions.getCheckpointType().isSavepoint()) {
             return nativeSavepoint(checkpointId, timestamp, streamFactory, checkpointOptions);
         }
@@ -401,7 +409,11 @@ public class ChangelogKeyedStateBackend<K>
         // materialization may truncate only a part of the previous result and the backend would
         // have to split it somehow for the former option, so the latter is used.
         lastCheckpointId = checkpointId;
+        // dingguotao 注释: 2024/8/19 17:38
+        //          上一次materialization完成的Changelog id
         lastUploadedFrom = changelogSnapshotState.lastMaterializedTo();
+        // dingguotao 注释: 2024/8/19 17:38
+        //          截止目录最新的SequenceNumber, [lastUploadedFrom, lastUploadedTo) 就是本次需要上传的所有Changelog
         lastUploadedTo = stateChangelogWriter.nextSequenceNumber();
         changelogTruncateHelper.checkpoint(checkpointId, lastUploadedTo);
 
@@ -489,12 +501,19 @@ public class ChangelogKeyedStateBackend<K>
         return (SnapshotResult<KeyedStateHandle>) snapshotResult;
     }
 
+    /*********************
+     * dingguotao 注释: 2024/9/4 11:05
+     *  	    delta changelog 上传的快照
+     *  	    changelogStateBackendStateCopy Rocksdb 快照
+     *********************/
     private SnapshotResult<ChangelogStateBackendHandle> buildSnapshotResult(
             long checkpointId,
             SnapshotResult<? extends ChangelogStateHandle> delta,
             ChangelogSnapshotState changelogStateBackendStateCopy) {
 
         // collections don't change once started and handles are immutable
+        // dingguotao 注释: 2024/9/5 10:55
+        //          这是冲Checkpoint恢复时,还没有做 materialization 时,会有上次恢复的changelog
         List<ChangelogStateHandle> prevDeltaCopy =
                 new ArrayList<>(changelogStateBackendStateCopy.getRestoredNonMaterialized());
         long persistedSizeOfThisCheckpoint = 0L;
@@ -535,6 +554,8 @@ public class ChangelogKeyedStateBackend<K>
                             localDeltaCopy,
                             jmHandle));
         } else {
+            // dingguotao 注释: 2024/9/5 10:55
+            //          changlog汇报的最终结果  materialization + changelog
             return SnapshotResult.of(
                     new ChangelogStateBackendHandleImpl(
                             changelogStateBackendStateCopy.getMaterializedSnapshot(),
@@ -794,6 +815,8 @@ public class ChangelogKeyedStateBackend<K>
                     localRestoredNonMaterialized.addAll(
                             localHandle.getNonMaterializedStateHandles());
                 } else {
+                    // dingguotao 注释: 2024/8/14 11:58
+                    //          ChangelogStateBackendHandleImpl 这种不带local的handle
                     materialized.addAll(h.getMaterializedStateHandles());
                     restoredNonMaterialized.addAll(h.getNonMaterializedStateHandles());
                 }
@@ -806,6 +829,8 @@ public class ChangelogKeyedStateBackend<K>
 
         if (!isRescaling
                 && (!localMaterialized.isEmpty() || !localRestoredNonMaterialized.isEmpty())) {
+            // dingguotao 注释: 2024/8/14 14:05
+            //          带本地状态恢复
             return new ChangelogSnapshotState(
                     materialized,
                     localMaterialized,
@@ -814,6 +839,8 @@ public class ChangelogKeyedStateBackend<K>
                     stateChangelogWriter.initialSequenceNumber(),
                     materializationId);
         }
+        // dingguotao 注释: 2024/8/14 14:05
+        //          通用情况,没有本地状态恢复
         return new ChangelogSnapshotState(
                 materialized,
                 restoredNonMaterialized,
@@ -845,13 +872,20 @@ public class ChangelogKeyedStateBackend<K>
             return Optional.empty();
         }
 
+        // dingguotao 注释: 2024/8/15 10:46
+        //          生成截止Materialization的SequenceNumber
         SequenceNumber upTo = stateChangelogWriter.nextSequenceNumber();
+        // dingguotao 注释: 2024/8/15 10:48
+        //          上一个Materialization的SequenceNumber
         SequenceNumber lastMaterializedTo = changelogSnapshotState.lastMaterializedTo();
 
         LOG.info(
                 "Initialize Materialization. Current changelog writers last append to sequence number {}",
                 upTo);
 
+        // dingguotao 注释: 2024/8/15 10:48
+        //          如果没有新的变更,就暂不做 materialization;
+        //          如果有新的变更,则开始做 materialization;
         if (upTo.compareTo(lastMaterializedTo) > 0) {
 
             LOG.info("Starting materialization from {} : {}", lastMaterializedTo, upTo);
@@ -861,6 +895,8 @@ public class ChangelogKeyedStateBackend<K>
             // checkpoint ID. A faked materialized Id is provided here.
             long materializationID = materializedId++;
 
+            // dingguotao 注释: 2024/8/15 10:51
+            //          开始做 Materialization
             MaterializationRunnable materializationRunnable =
                     new MaterializationRunnable(
                             keyedStateBackend.snapshot(
@@ -873,6 +909,8 @@ public class ChangelogKeyedStateBackend<K>
                             upTo);
 
             // log metadata after materialization is triggered
+            // dingguotao 注释: 2024/8/15 10:56
+            //          重置Changelog中,需要写metadata
             changelogStateFactory.resetAllWritingMetaFlags();
 
             return Optional.of(materializationRunnable);
@@ -901,6 +939,8 @@ public class ChangelogKeyedStateBackend<K>
                 subtaskName,
                 upTo,
                 materializedSnapshot);
+        // dingguotao 注释: 2024/9/4 11:39
+        //          生成最新的 changelogSnapshotState,后续Checkpoint时,依赖 Rocksdb 的 materialization
         changelogSnapshotState =
                 materializedSnapshot.getTaskLocalSnapshot() == null
                         ? new ChangelogSnapshotState(
@@ -1098,7 +1138,7 @@ public class ChangelogKeyedStateBackend<K>
 
         public ChangelogSnapshotState(
                 List<KeyedStateHandle> materializedSnapshot,
-                List<ChangelogStateHandle> restoredNonMaterialized,
+                List<ChangelogStateHandle> restoredNonMaterialized, // dingguotao 这是本地状态
                 SequenceNumber materializedTo,
                 long materializationID) {
             this.changelogSnapshot =

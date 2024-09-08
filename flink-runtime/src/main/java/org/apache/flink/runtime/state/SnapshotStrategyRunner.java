@@ -74,8 +74,12 @@ public final class SnapshotStrategyRunner<T extends StateObject, SR extends Snap
             @Nonnull CheckpointOptions checkpointOptions)
             throws Exception {
         long startTime = System.currentTimeMillis();
+        // dingguotao 注释: 2024/8/15 11:01
+        //          同步做快照,state中快照
         SR snapshotResources = snapshotStrategy.syncPrepareResources(checkpointId);
         logCompletedInternal(LOG_SYNC_COMPLETED_TEMPLATE, streamFactory, startTime);
+        // dingguotao 注释: 2024/8/24 10:05
+        //          异步逻辑的封装,是个Supplier
         SnapshotStrategy.SnapshotResultSupplier<T> asyncSnapshot =
                 snapshotStrategy.asyncSnapshot(
                         snapshotResources,
@@ -84,6 +88,8 @@ public final class SnapshotStrategyRunner<T extends StateObject, SR extends Snap
                         streamFactory,
                         checkpointOptions);
 
+        // dingguotao 注释: 2024/8/24 10:06
+        //          将异步逻辑进一步封装为FutureTask,方便统一调用
         FutureTask<SnapshotResult<T>> asyncSnapshotTask =
                 new AsyncSnapshotCallable<SnapshotResult<T>>() {
                     @Override

@@ -68,7 +68,11 @@ public class ChangelogBackendRestoreOperation {
             BaseBackendBuilder<K> baseBackendBuilder,
             ChangelogRestoreTargetBuilder<K> changelogRestoreTargetBuilder)
             throws Exception {
+        // dingguotao 注释: 2024/8/13 20:29
+        //          获取 Materialized StateHandles,也就是Rocksdb的 sst文件
         Collection<KeyedStateHandle> baseState = extractBaseState(stateHandles);
+        // dingguotao 注释: 2024/8/13 20:12
+        //          恢复Rocksdb的状态
         AbstractKeyedStateBackend<K> baseBackend = baseBackendBuilder.apply(baseState);
         ChangelogRestoreTarget<K> changelogRestoreTarget =
                 changelogRestoreTargetBuilder.apply(baseBackend, stateHandles);
@@ -105,6 +109,8 @@ public class ChangelogBackendRestoreOperation {
             try (CloseableIterator<StateChange> changes =
                     changelogHandleReader.getChanges((T) changelogHandle)) {
                 while (changes.hasNext()) {
+                    // dingguotao 注释: 2024/8/14 20:04
+                    //          恢复 Changelog
                     ChangelogBackendLogApplier.apply(
                             changes.next(), changelogRestoreTarget, classLoader, stateIds);
                 }

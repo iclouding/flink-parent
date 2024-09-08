@@ -148,11 +148,16 @@ public abstract class RocksDBSnapshotStrategyBase<K, R extends SnapshotResources
     @Override
     public NativeRocksDBSnapshotResources syncPrepareResources(long checkpointId) throws Exception {
 
+        // dingguotao 注释: 2024/8/15 11:03
+        //          创建/复用本地local目录
         final SnapshotDirectory snapshotDirectory = prepareLocalSnapshotDirectory(checkpointId);
         LOG.trace("Local RocksDB checkpoint goes to backup path {}.", snapshotDirectory);
 
         final List<StateMetaInfoSnapshot> stateMetaInfoSnapshots =
                 new ArrayList<>(kvStateInformation.size());
+        // dingguotao 注释: 2024/8/15 11:04
+        //          1. 生成上一个Checkpoint的快照,用来做增量上传
+        //          2. 做metadata的快照
         final PreviousSnapshot previousSnapshot =
                 snapshotMetaData(checkpointId, stateMetaInfoSnapshots);
 
@@ -170,6 +175,8 @@ public abstract class RocksDBSnapshotStrategyBase<K, R extends SnapshotResources
         // create hard links of living files in the output path
         try (ResourceGuard.Lease ignored = rocksDBResourceGuard.acquireResource();
                 Checkpoint checkpoint = Checkpoint.create(db)) {
+            // dingguotao 注释: 2024/8/15 11:06
+            //          Rocksdb做快照
             checkpoint.createCheckpoint(outputDirectory.getDirectory().toString());
         } catch (Exception ex) {
             try {
@@ -185,6 +192,8 @@ public abstract class RocksDBSnapshotStrategyBase<K, R extends SnapshotResources
     protected SnapshotDirectory prepareLocalSnapshotDirectory(long checkpointId)
             throws IOException {
 
+        // dingguotao 注释: 2024/8/15 11:02
+        //          开启本地backup
         if (localRecoveryConfig.isLocalBackupEnabled()) {
             // create a "permanent" snapshot directory for local recovery.
             LocalSnapshotDirectoryProvider directoryProvider =
@@ -223,6 +232,8 @@ public abstract class RocksDBSnapshotStrategyBase<K, R extends SnapshotResources
                 throw ex;
             }
         } else {
+            // dingguotao 注释: 2024/8/15 11:02
+            //          没有开启本地缓存,则新建对应chk目录
             // create a "temporary" snapshot directory because local recovery is inactive.
             File snapshotDir = new File(instanceBasePath, "chk-" + checkpointId);
             return SnapshotDirectory.temporary(snapshotDir);

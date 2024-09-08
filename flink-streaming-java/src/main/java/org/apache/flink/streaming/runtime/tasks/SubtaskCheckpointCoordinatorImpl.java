@@ -340,6 +340,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                 System.currentTimeMillis() - metadata.getTimestamp());
         CheckpointBarrier checkpointBarrier =
                 new CheckpointBarrier(metadata.getCheckpointId(), metadata.getTimestamp(), options);
+        // dingguotao 注释: 2024/8/18 15:37
+        //          UC ,output data
         operatorChain.broadcastEvent(checkpointBarrier, options.isUnalignedCheckpoint());
 
         // Step (3): Register alignment timer to timeout aligned barrier to unaligned barrier
@@ -352,14 +354,19 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         }
 
         // Step (5): Take the state snapshot. This should be largely asynchronous, to not impact
-        // progress of the
-        // streaming topology
+        // progress of the streaming topology
 
+        // dingguotao 注释: 2024/8/18 15:42
+        //          snapshotFutures 会存放该task所有operator的快照异步阶段及结果
         Map<OperatorID, OperatorSnapshotFutures> snapshotFutures =
                 CollectionUtil.newHashMapWithExpectedSize(operatorChain.getNumberOfOperators());
         try {
+            // dingguotao 注释: 2024/8/18 15:37
+            //          同步阶段
             if (takeSnapshotSync(
                     snapshotFutures, metadata, metrics, options, operatorChain, isRunning)) {
+                // dingguotao 注释: 2024/8/18 15:37
+                //          异步阶段
                 finishAndReportAsync(
                         snapshotFutures,
                         metadata,

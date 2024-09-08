@@ -82,6 +82,8 @@ public abstract class AbstractStateChangeFsUploader implements StateChangeUpload
 
             long numOfChangeSets = tasks.stream().flatMap(t -> t.getChangeSets().stream()).count();
 
+            // dingguotao 注释: 2024/9/3 11:28
+            //          handleFactory = FileStateHandle::new
             StreamStateHandle handle = stream.getHandle(handleFactory);
             changelogRegistry.startTracking(handle, numOfChangeSets);
 

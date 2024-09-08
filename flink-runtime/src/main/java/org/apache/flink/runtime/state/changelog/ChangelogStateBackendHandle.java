@@ -218,6 +218,8 @@ public interface ChangelogStateBackendHandle
 
         @Override
         public void registerSharedStates(SharedStateRegistry stateRegistry, long checkpointID) {
+            // dingguotao 注释: 2024/9/11 11:35
+            //          注册Rocksdb 的State handle
             for (KeyedStateHandle keyedStateHandle : materialized) {
                 // Use the unique and invariant UUID as the state registry key for a specific keyed
                 // state handle. To avoid unexpected unregister, this registry key would not change
@@ -228,6 +230,8 @@ public interface ChangelogStateBackendHandle
                         checkpointID,
                         true);
             }
+            // dingguotao 注释: 2024/9/13 11:00
+            //          注册 Rocksdb 和 changelog file的handle
             stateRegistry.registerAll(materialized, checkpointID);
             stateRegistry.registerAll(nonMaterialized, checkpointID);
         }

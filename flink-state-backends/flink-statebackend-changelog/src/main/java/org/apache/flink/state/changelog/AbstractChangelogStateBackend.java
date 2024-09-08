@@ -65,6 +65,8 @@ public abstract class AbstractChangelogStateBackend
      * @param stateBackend the delegated state backend.
      */
     AbstractChangelogStateBackend(StateBackend stateBackend) {
+        // dingguotao 注释: 2024/8/12 10:56
+        //          delegatedStateBackend = EmbeddedRocksDBStateBackend
         this.delegatedStateBackend = Preconditions.checkNotNull(stateBackend);
 
         Preconditions.checkArgument(
@@ -77,7 +79,7 @@ public abstract class AbstractChangelogStateBackend
     }
 
     @Override
-    public <K> CheckpointableKeyedStateBackend<K> createKeyedStateBackend(
+    public <K> CheckpointableKeyedStateBackend<K>  createKeyedStateBackend(
             KeyedStateBackendParameters<K> parameters) throws Exception {
         return restore(
                 parameters.getEnv(),
@@ -86,6 +88,8 @@ public abstract class AbstractChangelogStateBackend
                 parameters.getTtlTimeProvider(),
                 parameters.getMetricGroup(),
                 castHandles(parameters.getStateHandles()),
+                // dingguotao 注释: 2024/8/12 11:45
+                //          恢复Rocksdb的状态
                 baseHandles ->
                         (AbstractKeyedStateBackend<K>)
                                 delegatedStateBackend.createKeyedStateBackend(
